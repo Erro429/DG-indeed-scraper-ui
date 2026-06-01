@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Indeed Job Scraper</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --blue: #2563eb;
+            --blue-dark: #1d4ed8;
+            --blue-light: #eff6ff;
+            --green: #16a34a;
+            --red: #dc2626;
+            --amber: #d97706;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-400: #94a3b8;
+            --gray-600: #475569;
+            --gray-800: #1e293b;
+            --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-800);
+            min-height: 100vh;
+        }
+
+        header {
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 0 24px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        header .logo {
+            width: 32px;
+            height: 32px;
+            background: var(--blue);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        header h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--gray-800);
+        }
+
+        header span {
+            font-size: 13px;
+            color: var(--gray-400);
+            font-weight: 400;
+        }
+
+        main {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 32px 24px 64px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 28px;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-bottom: 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 640px) {
+            .form-grid { grid-template-columns: 1fr; }
+        }
+
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+
+        label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-600);
+            letter-spacing: .01em;
+        }
+
+        label .hint {
+            font-weight: 400;
+            color: var(--gray-400);
+            margin-left: 4px;
+        }
+
+        textarea, input[type="number"], select {
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--gray-800);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 10px 12px;
+            transition: border-color .15s, box-shadow .15s;
+            background: white;
+            width: 100%;
+        }
+
+        textarea:focus, input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 96px;
+            line-height: 1.6;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 640px) {
+            .form-row { grid-template-columns: 1fr; }
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: background .15s, transform .1s, opacity .15s;
+        }
+
+        .btn:active { transform: scale(.98); }
+        .btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+
+        .btn-primary {
+            background: var(--blue);
+            color: white;
+            width: 100%;
+            justify-content: center;
+            margin-top: 24px;
+            padding: 12px 20px;
+            font-size: 15px;
+        }
+
+        .btn-primary:hover:not(:disabled) { background: var(--blue-dark); }
+
+        .btn-secondary {
+            background: var(--gray-100);
+            color: var(--gray-800);
+            border: 1px solid var(--gray-200);
+        }
+
+        .btn-secondary:hover:not(:disabled) { background: var(--gray-200); }
+
+        /* Status banner */
+        #status-section { display: none; }
+
+        .status-banner {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .status-banner.running {
+            background: #fef9c3;
+            border: 1px solid #fde047;
+            color: #713f12;
+        }
+
+        .status-banner.success {
+            background: #dcfce7;
+            border: 1px solid #86efac;
+            color: #14532d;
+        }
+
+        .status-banner.failed {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #7f1d1d;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid #fde047;
+            border-top-color: #713f12;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Results */
+        #results-section { display: none; }
+
+        .results-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .results-count {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--gray-800);
+        }
+
+        .results-count span {
+            color: var(--blue);
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border: 1px solid var(--gray-200);
+            border-radius: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        thead tr {
+            background: var(--gray-100);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        thead th {
+            text-align: left;
+            padding: 10px 14px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--gray-600);
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--gray-100);
+            transition: background .1s;
+        }
+
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: var(--blue-light); }
+
+        tbody td {
+            padding: 11px 14px;
+            color: var(--gray-800);
+            vertical-align: top;
+            line-height: 1.4;
+        }
+
+        .cell-title {
+            font-weight: 600;
+            max-width: 200px;
+        }
+
+        .cell-company { max-width: 160px; }
+        .cell-location { max-width: 140px; color: var(--gray-600); }
+        .cell-salary { color: var(--green); font-weight: 500; white-space: nowrap; }
+
+        .cell-desc {
+            max-width: 300px;
+            font-size: 12px;
+            color: var(--gray-600);
+            line-height: 1.5;
+        }
+
+        .desc-toggle {
+            background: none;
+            border: none;
+            color: var(--blue);
+            font-size: 12px;
+            cursor: pointer;
+            padding: 0;
+            text-decoration: underline;
+        }
+
+        .job-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--blue);
+            text-decoration: none;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .job-link:hover { text-decoration: underline; }
+
+        .null-value { color: var(--gray-400); font-style: italic; }
+
+        .error-box {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #7f1d1d;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 13px;
+            margin-top: 12px;
+            display: none;
+        }
+
+        /* Searchable country dropdown */
+        .country-wrapper { position: relative; }
+
+        .country-search {
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--gray-800);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 10px 32px 10px 12px;
+            width: 100%;
+            background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
+            cursor: pointer;
+            transition: border-color .15s, box-shadow .15s;
+        }
+        .country-search:focus {
+            outline: none;
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+            cursor: text;
+        }
+
+        .country-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0; right: 0;
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+            max-height: 220px;
+            overflow-y: auto;
+            z-index: 200;
+        }
+        .country-dropdown.open { display: block; }
+
+        .country-option {
+            padding: 9px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            color: var(--gray-800);
+        }
+        .country-option:hover, .country-option.active { background: var(--blue-light); }
+        .country-option.selected { font-weight: 600; color: var(--blue); }
+        .country-no-results {
+            padding: 10px 12px;
+            font-size: 13px;
+            color: var(--gray-400);
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">&#128269;</div>
+    <h1>Indeed Job Scraper</h1>
+    <span>&mdash; hiring signal detector</span>
+</header>
+
+<main>
+
+    <!-- Search Form -->
+    <div class="card">
+        <p class="card-title">Search Configuration</p>
+        <form id="search-form">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="job-titles">
+                        Job Titles <span class="hint">(one per line)</span>
+                    </label>
+                    <textarea
+                        id="job-titles"
+                        rows="10"
+                    >Business Development
+Sales Development
+BDR
+SDR
+Account Executive
+Head of Growth
+VP Sales
+Sales Manager
+Growth Marketing
+New Business</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="locations">
+                        States / Countries <span class="hint">(one per line)</span>
+                    </label>
+                    <textarea
+                        id="locations"
+                        placeholder="California&#10;Texas&#10;New York&#10;United States"
+                        rows="4"
+                    ></textarea>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="max-results">Max Jobs Per Search <span class="hint">(blank = all pages)</span></label>
+                    <input
+                        type="number"
+                        id="max-results"
+                        min="1"
+                        placeholder="Leave blank to scrape all results"
+                    />
+                </div>
+                <div class="form-group">
+                    <label>Country</label>
+                    <div class="country-wrapper" id="country-wrapper">
+                        <input type="text" id="country-search" class="country-search"
+                               placeholder="Search country…" autocomplete="off" />
+                        <div class="country-dropdown" id="country-dropdown"></div>
+                        <input type="hidden" id="country" value="us" />
+                    </div>
+                </div>
+            </div>
+
+            <div id="form-error" class="error-box"></div>
+
+            <button type="submit" class="btn btn-primary" id="submit-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                Start Scraping
+            </button>
+        </form>
+    </div>
+
+    <!-- Status -->
+    <div id="status-section">
+        <div id="status-banner" class="status-banner running">
+            <div class="spinner" id="status-spinner"></div>
+            <span id="status-text">Starting scraper...</span>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div id="results-section">
+        <div class="results-header">
+            <p class="results-count">Found <span id="results-count">0</span> jobs</p>
+            <button class="btn btn-secondary" id="csv-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download CSV
+            </button>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Job Title</th>
+                        <th>Company</th>
+                        <th>Location</th>
+                        <th>Salary</th>
+                        <th>Description</th>
+                        <th>Link</th>
+                    </tr>
+                </thead>
+                <tbody id="results-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    const form = document.getElementById('search-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const formError = document.getElementById('form-error');
+
+    // ── Searchable country dropdown ──────────────────────────────────────────
+    const COUNTRIES = [
+        { code: 'us', name: 'United States' },
+        { code: 'uk', name: 'United Kingdom' },
+        { code: 'ca', name: 'Canada' },
+        { code: 'au', name: 'Australia' },
+        { code: 'nz', name: 'New Zealand' },
+        { code: 'in', name: 'India' },
+        { code: 'sg', name: 'Singapore' },
+        { code: 'de', name: 'Germany' },
+        { code: 'fr', name: 'France' },
+        { code: 'mx', name: 'Mexico' },
+        { code: 'br', name: 'Brazil' },
+        { code: 'ar', name: 'Argentina' },
+        { code: 'co', name: 'Colombia' },
+        { code: 'cl', name: 'Chile' },
+        { code: 'pe', name: 'Peru' },
+        { code: 'cr', name: 'Costa Rica' },
+        { code: 'nl', name: 'Netherlands' },
+        { code: 'es', name: 'Spain' },
+        { code: 'it', name: 'Italy' },
+        { code: 'pl', name: 'Poland' },
+        { code: 'pt', name: 'Portugal' },
+        { code: 'se', name: 'Sweden' },
+        { code: 'no', name: 'Norway' },
+        { code: 'dk', name: 'Denmark' },
+        { code: 'fi', name: 'Finland' },
+        { code: 'ie', name: 'Ireland' },
+        { code: 'be', name: 'Belgium' },
+        { code: 'ch', name: 'Switzerland' },
+        { code: 'at', name: 'Austria' },
+        { code: 'cz', name: 'Czech Republic' },
+        { code: 'hu', name: 'Hungary' },
+        { code: 'ro', name: 'Romania' },
+        { code: 'gr', name: 'Greece' },
+        { code: 'tr', name: 'Turkey' },
+        { code: 'ru', name: 'Russia' },
+        { code: 'ae', name: 'United Arab Emirates' },
+        { code: 'sa', name: 'Saudi Arabia' },
+        { code: 'qa', name: 'Qatar' },
+        { code: 'kw', name: 'Kuwait' },
+        { code: 'bh', name: 'Bahrain' },
+        { code: 'om', name: 'Oman' },
+        { code: 'eg', name: 'Egypt' },
+        { code: 'il', name: 'Israel' },
+        { code: 'pk', name: 'Pakistan' },
+        { code: 'ng', name: 'Nigeria' },
+        { code: 'ke', name: 'Kenya' },
+        { code: 'gh', name: 'Ghana' },
+        { code: 'za', name: 'South Africa' },
+        { code: 'jp', name: 'Japan' },
+        { code: 'kr', name: 'South Korea' },
+        { code: 'hk', name: 'Hong Kong' },
+        { code: 'tw', name: 'Taiwan' },
+        { code: 'ph', name: 'Philippines' },
+        { code: 'my', name: 'Malaysia' },
+        { code: 'id', name: 'Indonesia' },
+        { code: 'vn', name: 'Vietnam' },
+        { code: 'th', name: 'Thailand' },
+    ];
+
+    const countrySearch = document.getElementById('country-search');
+    const countryDropdown = document.getElementById('country-dropdown');
+    const countryHidden = document.getElementById('country');
+    let selectedCode = 'us';
+
+    function getSelectedName() {
+        var c = COUNTRIES.find(function(c) { return c.code === selectedCode; });
+        return c ? c.name : selectedCode;
+    }
+
+    function renderDropdown(filter) {
+        var q = (filter || '').toLowerCase();
+        var matches = q
+            ? COUNTRIES.filter(function(c) { return c.name.toLowerCase().includes(q) || c.code.includes(q); })
+            : COUNTRIES;
+
+        countryDropdown.innerHTML = '';
+        if (matches.length === 0) {
+            countryDropdown.innerHTML = '<div class="country-no-results">No countries found</div>';
+        } else {
+            matches.forEach(function(c) {
+                var div = document.createElement('div');
+                div.className = 'country-option' + (c.code === selectedCode ? ' selected' : '');
+                div.textContent = c.name;
+                div.dataset.code = c.code;
+                div.addEventListener('mousedown', function(e) {
+                    e.preventDefault(); // keep focus on input
+                    selectedCode = c.code;
+                    countryHidden.value = c.code;
+                    countrySearch.value = c.name;
+                    closeDropdown();
+                });
+                countryDropdown.appendChild(div);
+            });
+        }
+    }
+
+    function openDropdown() {
+        renderDropdown('');
+        countrySearch.value = '';
+        countryDropdown.classList.add('open');
+    }
+
+    function closeDropdown() {
+        countryDropdown.classList.remove('open');
+        countrySearch.value = getSelectedName();
+    }
+
+    // Set initial display value
+    countrySearch.value = 'United States';
+
+    countrySearch.addEventListener('focus', openDropdown);
+    countrySearch.addEventListener('input', function() {
+        renderDropdown(this.value);
+        countryDropdown.classList.add('open');
+    });
+    countrySearch.addEventListener('blur', closeDropdown);
+
+    document.addEventListener('click', function(e) {
+        if (!document.getElementById('country-wrapper').contains(e.target)) {
+            closeDropdown();
+        }
+    });
+    const statusSection = document.getElementById('status-section');
+    const statusBanner = document.getElementById('status-banner');
+    const statusSpinner = document.getElementById('status-spinner');
+    const statusText = document.getElementById('status-text');
+    const resultsSection = document.getElementById('results-section');
+    const resultsCount = document.getElementById('results-count');
+    const resultsBody = document.getElementById('results-body');
+    const csvBtn = document.getElementById('csv-btn');
+
+    let currentResults = [];
+    let pollTimer = null;
+
+    function showError(msg) {
+        formError.textContent = msg;
+        formError.style.display = 'block';
+    }
+
+    function hideError() {
+        formError.style.display = 'none';
+    }
+
+    function setStatus(type, message) {
+        statusSection.style.display = 'block';
+        statusBanner.className = 'status-banner ' + type;
+        statusText.textContent = message;
+        statusSpinner.style.display = type === 'running' ? 'block' : 'none';
+        if (type === 'running') {
+            statusSpinner.style.borderTopColor = '#713f12';
+            statusSpinner.style.borderColor = '#fde047';
+        }
+    }
+
+    function renderResults(items) {
+        currentResults = items;
+        resultsCount.textContent = items.length;
+        resultsBody.innerHTML = '';
+
+        items.forEach(function(job, i) {
+            var desc = job.jobDescription || '';
+            var shortDesc = desc.length > 160 ? desc.slice(0, 160) + '…' : desc;
+            var descCell = desc
+                ? '<span class="desc-short">' + esc(shortDesc) + '</span>' +
+                  (desc.length > 160
+                    ? ' <button class="desc-toggle" onclick="toggleDesc(this)">more</button>' +
+                      '<span class="desc-full" style="display:none">' + esc(desc) + ' <button class="desc-toggle" onclick="toggleDesc(this)">less</button></span>'
+                    : '')
+                : '<span class="null-value">—</span>';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML =
+                '<td>' + (i + 1) + '</td>' +
+                '<td class="cell-title">' + esc(job.jobTitle) + '</td>' +
+                '<td class="cell-company">' + (job.companyName ? esc(job.companyName) : '<span class="null-value">—</span>') + '</td>' +
+                '<td class="cell-location">' + (job.location ? esc(job.location) : '<span class="null-value">—</span>') + '</td>' +
+                '<td class="cell-salary">' + (job.salary ? esc(job.salary) : '<span class="null-value">—</span>') + '</td>' +
+                '<td class="cell-desc">' + descCell + '</td>' +
+                '<td>' + (job.jobUrl ? '<a class="job-link" href="' + esc(job.jobUrl) + '" target="_blank" rel="noopener">View ↗</a>' : '<span class="null-value">—</span>') + '</td>';
+            resultsBody.appendChild(tr);
+        });
+
+        resultsSection.style.display = 'block';
+    }
+
+    function esc(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    async function pollStatus(runId) {
+        try {
+            const res = await fetch('/api/status/' + runId);
+            const data = await res.json();
+
+            if (!res.ok) {
+                setStatus('failed', 'Error checking status: ' + (data.error || 'unknown'));
+                submitBtn.disabled = false;
+                return;
+            }
+
+            const { status, jobsFound } = data;
+
+            if (status === 'RUNNING' || status === 'READY' || status === 'ABORTING') {
+                setStatus('running', 'Scraping in progress… ' + (jobsFound > 0 ? jobsFound + ' jobs found so far' : 'please wait'));
+                pollTimer = setTimeout(function() { pollStatus(runId); }, 6000);
+                return;
+            }
+
+            if (status === 'SUCCEEDED') {
+                setStatus('success', 'Done! Fetching results…');
+                const resData = await (await fetch('/api/results/' + runId)).json();
+                const items = resData.items || [];
+                if (items.length === 0) {
+                    setStatus('success', 'Run finished but no jobs were found. Try different titles or locations.');
+                } else {
+                    setStatus('success', 'Scraping complete — ' + items.length + ' job' + (items.length !== 1 ? 's' : '') + ' found.');
+                    renderResults(items);
+                }
+                submitBtn.disabled = false;
+                return;
+            }
+
+            // FAILED / ABORTED / TIMED-OUT
+            setStatus('failed', 'Run ended with status: ' + status + '. Check the Apify Console for details.');
+            submitBtn.disabled = false;
+        } catch (err) {
+            setStatus('failed', 'Network error: ' + err.message);
+            submitBtn.disabled = false;
+        }
+    }
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        hideError();
+
+        if (pollTimer) {
+            clearTimeout(pollTimer);
+            pollTimer = null;
+        }
+
+        const jobTitles = document.getElementById('job-titles').value
+            .split('\n').map(function(s) { return s.trim(); }).filter(Boolean);
+        const locations = document.getElementById('locations').value
+            .split('\n').map(function(s) { return s.trim(); }).filter(Boolean);
+        const maxResultsRaw = parseInt(document.getElementById('max-results').value);
+        const maxResults = maxResultsRaw > 0 ? maxResultsRaw : 0; // 0 = no limit
+        const country = countryHidden.value || 'us';
+
+        if (jobTitles.length === 0) { showError('Please enter at least one job title.'); return; }
+        if (locations.length === 0) { showError('Please enter at least one state or country (e.g. California, Texas, United States).'); return; }
+
+        submitBtn.disabled = true;
+        resultsSection.style.display = 'none';
+        setStatus('running', 'Starting scraper on Apify cloud…');
+
+        try {
+            const res = await fetch('/api/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ jobTitles, locations, country, maxResultsPerSearch: maxResults }),
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                setStatus('failed', data.error || 'Failed to start the scraper.');
+                submitBtn.disabled = false;
+                return;
+            }
+
+            setStatus('running', 'Scraper started — waiting for results…');
+            pollTimer = setTimeout(function() { pollStatus(data.runId); }, 5000);
+        } catch (err) {
+            setStatus('failed', 'Could not reach the server: ' + err.message);
+            submitBtn.disabled = false;
+        }
+    });
+
+    function toggleDesc(btn) {
+        var short = btn.parentElement.querySelector('.desc-short');
+        var full = btn.parentElement.querySelector('.desc-full');
+        if (!short || !full) return;
+        var expanding = btn.textContent === 'more';
+        short.style.display = expanding ? 'none' : '';
+        full.style.display = expanding ? '' : 'none';
+    }
+
+    csvBtn.addEventListener('click', function() {
+        if (currentResults.length === 0) return;
+
+        const cols = ['jobTitle', 'companyName', 'location', 'salary', 'jobDescription', 'jobUrl', 'indeedJobId'];
+        const header = cols.join(',');
+        const rows = currentResults.map(function(job) {
+            return cols.map(function(col) {
+                const val = job[col] ?? '';
+                return '"' + String(val).replace(/"/g, '""') + '"';
+            }).join(',');
+        });
+
+        const csv = [header].concat(rows).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'indeed-jobs-' + new Date().toISOString().slice(0, 10) + '.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+</script>
+</body>
+</html>
